@@ -10,5 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 0) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_16_135533) do
+  create_table "tax_filings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "ein", limit: 20, null: false
+    t.string "return_type", limit: 10, null: false
+    t.integer "tax_year", null: false
+    t.string "file_name", null: false
+    t.string "business_name", null: false
+    t.string "website_url"
+    t.text "mission_description"
+    t.decimal "total_revenue", precision: 15, scale: 2
+    t.decimal "total_expenses", precision: 15, scale: 2
+    t.decimal "total_assets", precision: 15, scale: 2
+    t.integer "employee_count"
+    t.decimal "py_total_revenue", precision: 15, scale: 2
+    t.decimal "py_total_expenses", precision: 15, scale: 2
+    t.decimal "py_total_assets", precision: 15, scale: 2
+    t.integer "py_employee_count"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 end
