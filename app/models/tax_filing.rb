@@ -1,4 +1,6 @@
 class TaxFiling < ApplicationRecord
+  scope :search_name, ->(name) { where("business_name LIKE ?", "%#{name}%") if name.present? }
+
   def revenue_delta_amount
     total_revenue - (py_total_revenue || 0)
   end
@@ -27,11 +29,21 @@ class TaxFiling < ApplicationRecord
   end
 
   def employees_delta_amount
-    employee_count - (py_employee_count || 0)
+    (employee_count || 0) - (py_employee_count || 0)
   end
 
   def employees_delta_percent
     return 0 if py_employee_count.nil?
-    ((employee_count - py_employee_count).to_f / py_employee_count * 100).round(2)
+    (((employee_count || 0) - (py_employee_count || 0)).to_f / (py_employee_count || 1) * 100).round(2)
+  end
+
+  def as_json(options = {})
+    super(options).tap do |hash|
+      # convert all BigDecimal fields to float
+      self.class.columns.select { |c| c.type == :decimal }.each do |col|
+        key = col.name
+        hash[key] = hash[key].to_f if hash[key]
+      end
+    end
   end
 end
