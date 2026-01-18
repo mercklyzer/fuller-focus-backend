@@ -32,8 +32,8 @@ class TaxFilingsController < ApplicationController
     # Assumption: There can be multiple tax filings under the same EIN for different years.
     tax_filings = TaxFiling.where(ein: params[:id]).order(tax_year: :desc)
 
-    if tax_filings.nil?
-      render_json({ error: "Tax filing not found" }, status: :not_found)
+    if tax_filings.empty?
+      render_json({ error: "Company does not exist." }, status: :not_found)
       return
     end
 
@@ -59,7 +59,9 @@ class TaxFilingsController < ApplicationController
     end
 
     render_json({
-      data: returned_tax_filings
+      data: {
+        tax_filings: returned_tax_filings
+      }
     })
   end
 end
