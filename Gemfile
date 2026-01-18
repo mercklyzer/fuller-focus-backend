@@ -62,6 +62,11 @@ group :test do
   gem "selenium-webdriver"
 end
 
+group :development, :test do
+  gem 'pry-rails'
+  gem 'pry-byebug'
+end
+
 gem "will_paginate", "~> 4.0"
 
 gem "rack-cors", "~> 3.0"
