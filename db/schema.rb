@@ -10,7 +10,33 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_16_135533) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_18_130402) do
+  create_table "downloads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "url", null: false
+    t.string "filename", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "downloaded_size", default: 0
+    t.bigint "total_size"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_downloads_on_status"
+    t.index ["url"], name: "index_downloads_on_url"
+  end
+
+  create_table "extractions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "download_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "extracted_path"
+    t.text "error_message"
+    t.integer "extracted_files_count", default: 0
+    t.integer "total_files_count"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["download_id"], name: "index_extractions_on_download_id"
+    t.index ["status"], name: "index_extractions_on_status"
+  end
+
   create_table "tax_filings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "ein", limit: 20, null: false
     t.string "return_type", limit: 10, null: false
@@ -30,4 +56,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_16_135533) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
+
+  add_foreign_key "extractions", "downloads"
 end
