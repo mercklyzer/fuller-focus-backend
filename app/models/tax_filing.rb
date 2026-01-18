@@ -1,6 +1,8 @@
 class TaxFiling < ApplicationRecord
   scope :search_name, ->(name) { where("business_name LIKE ?", "%#{name}%") if name.present? }
 
+  validates :ein, uniqueness: { scope: :tax_year }
+
   def revenue_delta_amount
     total_revenue - (py_total_revenue || 0)
   end

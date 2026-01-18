@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_18_130402) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_18_144917) do
   create_table "downloads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "url", null: false
     t.string "filename", null: false
@@ -37,6 +37,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_18_130402) do
     t.index ["status"], name: "index_extractions_on_status"
   end
 
+  create_table "failed_xml_file_processing_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "xml_batch_log_id", null: false
+    t.string "file_path", null: false
+    t.text "error_message"
+    t.text "error_backtrace"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["xml_batch_log_id"], name: "index_failed_xml_file_processing_logs_on_xml_batch_log_id"
+  end
+
   create_table "tax_filings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "ein", limit: 20, null: false
     t.string "return_type", limit: 10, null: false
@@ -57,5 +67,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_18_130402) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "xml_batch_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "extraction_id", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "total_files_count"
+    t.integer "files_processed_count", default: 0, null: false
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "error_backtrace"
+    t.index ["extraction_id"], name: "index_xml_batch_logs_on_extraction_id"
+  end
+
   add_foreign_key "extractions", "downloads"
+  add_foreign_key "failed_xml_file_processing_logs", "xml_batch_logs"
+  add_foreign_key "xml_batch_logs", "extractions"
 end
