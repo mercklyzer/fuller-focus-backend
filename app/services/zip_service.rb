@@ -4,24 +4,26 @@ require "fileutils"
 require "securerandom"
 
 class ZipService
-  def self.download(url, directory: Rails.root.join("tmp"))
-    # Create download record
-    download_record = Download.create!(
-      url: url,
-      filename: "",
-      status: "pending"
-    )
+  def self.download(download_record, directory: Rails.root.join("tmp"))
+    url = download_record.url
+    last_update_time = Time.now
 
     begin
       URI.open(url, "rb",
         content_length_proc: ->(total_size) {
-          download_record.update(total_size: total_size)
+          with_reconnection { download_record.update(total_size: total_size) }
         },
         progress_proc: ->(downloaded_size) {
-          download_record.update(
-            downloaded_size: downloaded_size,
-            status: "processing"
-          )
+          # Throttle updates to every 10 seconds to avoid connection timeouts
+          if Time.now - last_update_time > 10
+            with_reconnection do
+              download_record.update(
+                downloaded_size: downloaded_size,
+                status: "processing"
+              )
+            end
+            last_update_time = Time.now
+          end
         }
       ) do |remote_file|
         # Try to get filename from Content-Disposition header, fallback to URL basename
@@ -59,12 +61,8 @@ class ZipService
     end
   end
 
-  def self.extract(download, destination_directory: nil)
-    # Create extraction record
-    extraction_record = Extraction.create!(
-      download: download,
-      status: "pending"
-    )
+  def self.extract(extraction_record, destination_directory: nil)
+    download = extraction_record.download
 
     begin
       # Convert to string to handle Pathname objects
@@ -134,5 +132,25 @@ class ZipService
   def self.download_and_extract(url)
     download_record = download(url)
     extract(download_record)
+  end
+
+  def self.with_reconnection
+    retries = 0
+    begin
+      ActiveRecord::Base.connection.reconnect! unless ActiveRecord::Base.connection.active?
+      yield
+    rescue ActiveRecord::ConnectionNotEstablished,
+           ActiveRecord::StatementInvalid,
+           Mysql2::Error => e
+      retries += 1
+      if retries <= 3
+        sleep(1)
+        ActiveRecord::Base.connection.reconnect!
+        retry
+      else
+        Rails.logger.error "Failed to reconnect after #{retries} attempts: #{e.message}"
+        raise
+      end
+    end
   end
 end

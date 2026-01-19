@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_18_144917) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_18_152523) do
   create_table "downloads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "url", null: false
     t.string "filename", null: false
@@ -80,6 +80,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_18_144917) do
   end
 
   add_foreign_key "extractions", "downloads"
-  add_foreign_key "failed_xml_file_processing_logs", "xml_batch_logs"
-  add_foreign_key "xml_batch_logs", "extractions"
+  add_foreign_key "failed_xml_file_processing_logs", "xml_batch_logs", on_delete: :cascade
+  add_foreign_key "xml_batch_logs", "extractions", on_delete: :cascade
 end

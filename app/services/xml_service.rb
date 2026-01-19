@@ -1,16 +1,14 @@
 require 'nokogiri'
 
 class XmlService
-  def self.process(extraction_id)
-    extraction = Extraction.find(extraction_id)
+  def self.process(extraction)
     directory = extraction.extracted_path
-
     xml_files = Dir.glob(File.join(directory, '*.xml'))
     total_files = xml_files.count
 
     # Create batch log record
     batch_log = XmlBatchLog.create!(
-      extraction_id: extraction_id,
+      extraction_id: extraction.id,
       status: 'processing',
       total_files_count: total_files,
     )
@@ -20,44 +18,55 @@ class XmlService
     files_processed = 0
 
     begin
-      # Process in batches to avoid memory issues
       batch_size = 1000
       xml_files.each_slice(batch_size).with_index do |batch, batch_index|
         puts "Processing batch #{batch_index + 1} of #{(total_files / batch_size.to_f).ceil}"
 
         batch.each_with_index do |file_path, index|
           begin
+            # Verify connection is alive every 100 files
+            if (index + 1) % 100 == 0
+              ActiveRecord::Base.connection.verify!
+            end
+
             process_xml_file(file_path)
             files_processed += 1
             print "." if (index + 1) % 100 == 0
 
-            if (index + 1) % 100 == 0
-              batch_log.update_columns(
-                files_processed_count: files_processed,
-              )
-            end
+          rescue ActiveRecord::ConnectionNotEstablished,
+                 ActiveRecord::StatementInvalid => db_error
+            puts "\nDatabase connection error, reconnecting..."
+            ActiveRecord::Base.connection.reconnect!
+            retry
+
           rescue => e
             puts "\nError processing #{file_path}: #{e.message}"
 
-            # Log failed file
-            FailedXmlFileProcessingLog.create!(
-              xml_batch_log_id: batch_log.id,
-              file_path: File.basename(file_path),
-              error_message: e.message,
-              error_backtrace: e.backtrace&.join("\n")
-            )
-
-            # Update batch log immediately after failure
-            batch_log.update_columns(
-              files_processed_count: files_processed,
-            )
+            begin
+              ActiveRecord::Base.connection_pool.with_connection do
+                FailedXmlFileProcessingLog.create!(
+                  xml_batch_log_id: batch_log.id,
+                  file_path: File.basename(file_path),
+                  error_message: e.message,
+                  error_backtrace: e.backtrace&.join("\n")
+                )
+              end
+            rescue ActiveRecord::ConnectionNotEstablished
+              ActiveRecord::Base.connection.reconnect!
+              retry
+            end
           end
         end
 
-        puts "\nCompleted batch #{batch_index + 1}"
+        # Update progress after each batch
+        begin
+          batch_log.update_columns(files_processed_count: files_processed)
+        rescue ActiveRecord::ConnectionNotEstablished
+          ActiveRecord::Base.connection.reconnect!
+          retry
+        end
 
-        # Optional: garbage collection after each batch
-        GC.start
+        puts "\nCompleted batch #{batch_index + 1}"
       end
 
       # Update batch log with success
@@ -88,10 +97,9 @@ class XmlService
     # Extract relevant data
     data = tax_filing(doc, file_path)
     existing_record = TaxFiling.find_by(ein: data[:ein], tax_year: data[:tax_year])
-    if existing_record
-      TaxFiling.create!(data)
 
-      # existing_record.update!(data)
+    if existing_record
+      existing_record.update!(data)
     else
       TaxFiling.create!(data)
     end

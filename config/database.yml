@@ -16,6 +16,15 @@ default: &default
   username: <%= ENV.fetch("DATABASE_USERNAME") { "root" } %>
   password: <%= ENV.fetch("DATABASE_PASSWORD") { "password" } %>
   host: <%= ENV.fetch("DATABASE_HOST") { "127.0.0.1" } %>
+  reconnect: true
+  checkout_timeout: 10
+  # Keep connection alive
+  read_timeout: 60
+  write_timeout: 60
+  connect_timeout: 10
+  variables:
+    wait_timeout: 28800
+    interactive_timeout: 28800
 
 development:
   primary:
