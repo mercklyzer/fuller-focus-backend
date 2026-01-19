@@ -25,6 +25,11 @@ class DownloadExtractProcessJob < ApplicationJob
     ZipService.download(download_record)
     puts "Download completed: #{download_record.filename}"
 
+    if download_record.status == "failed"
+      puts "Download failed: #{download_record.error_message}"
+      return
+    end
+
     # Create extraction record with fresh connection
     extraction_record = nil
     with_fresh_connection do

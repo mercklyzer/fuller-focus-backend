@@ -1,6 +1,8 @@
 class DownloadsController < ApplicationController
   protect_from_forgery with: :null_session
 
+  before_action :authenticate_api_key!
+
   STATUS_MESSAGES = {
     "pending" => "Download is already pending.",
     "processing" => "Download is already processing.",
@@ -56,5 +58,17 @@ class DownloadsController < ApplicationController
     end
 
     render_json(data)
+  end
+
+  def authenticate_api_key!
+    key = request.headers["X-API-Key"]
+
+    api_key = ApiKey.authenticate(key)
+
+    if api_key
+      api_key.update_column(:last_used_at, Time.current)
+    else
+      render json: { error: "Unauthorized" }, status: :unauthorized
+    end
   end
 end
