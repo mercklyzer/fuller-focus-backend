@@ -67,3 +67,7 @@ We use Ruby 3.3.1. To install it using the `asdf` version manager:
 Ensure your Docker MySQL container is running, then execute the setup script:
 ```bash
 ./bin/script.sh
+```
+
+### API Key
+To generate the API Key to be used for `POST /dataset`, open the rails console via `bin/rails c` and enter `ApiKey.generate!(name: "Test")`. This should return the API Key. Use this API Key as the value of the `X-API-Key` header of the POST request.
