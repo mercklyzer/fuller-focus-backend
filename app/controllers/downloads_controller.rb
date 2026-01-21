@@ -57,6 +57,20 @@ class DownloadsController < ApplicationController
       )
     end
 
+    if download.extraction
+      data.merge!(
+        extracted_files_count: download.extraction.extracted_files_count,
+        extracted_total_files_count: download.extraction.total_files_count
+      )
+    end
+
+    if download.extraction.xml_batch_log
+      data.merge!(
+        processed_files_count: download.extraction.xml_batch_log.files_processed_count,
+        processed_total_files_count: download.extraction.xml_batch_log.total_files_count
+      )
+    end
+
     render_json(data)
   end
 
