@@ -62,6 +62,18 @@ We use Ruby 3.3.1. To install it using the `asdf` version manager:
     ```bash
     bundle install
     ```
+    If you ever encounter this error:
+    ```bash
+    mysql client is missing. You may need to 'sudo apt-get install libmariadb-dev', 'sudo apt-get install
+    libmysqlclient-dev' or 'sudo yum install mysql-devel', and try again.
+    -----
+    *** extconf.rb failed ***
+    Could not create Makefile due to some reason, probably lack of necessary
+    libraries and/or headers.  Check the mkmf.log file for more details.  You may
+    need configuration options.
+    ```
+
+    Run `sudo apt-get install libmysqlclient-dev`
 
 ### Database Migration & Initialization
 Ensure your Docker MySQL container is running, then execute the setup script:
